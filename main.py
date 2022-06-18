@@ -59,6 +59,16 @@ class Map:
 		nx.draw(self.graph, pos, node_size=10, with_labels = False)
 		plt.show()
 
+	def get_close_stations(self, station, radius):
+		pos = nx.get_node_attributes(self.graph,'pos')
+
+		station_pos = pos[station]
+
+		close_stations = [(station, self.distance(station_pos[1], pos[station][1], station_pos[0], pos[station][0])) 
+			for station in pos if self.distance(station_pos[1], pos[station][1], station_pos[0], pos[station][0]) <= radius
+			]
+
+		return close_stations
 
 
 	def distance(self, lat1, lat2, lon1, lon2): 
@@ -84,7 +94,11 @@ class Map:
 
 def main():
 	underground = Map()
-	underground.draw_graph()
+
+	# Example of all stations within a 3 km radius of bank
+	print(underground.get_close_stations("Bank", 3))
+
+	# underground.draw_graph()
 
 
 if __name__ == '__main__':
