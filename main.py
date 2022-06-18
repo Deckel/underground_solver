@@ -3,6 +3,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import networkx as nx
 
+from math import radians, cos, sin, asin, sqrt
+from networkx.algorithms import approximation as ax
+
 class Map:
 
 	def __init__(self):
@@ -33,16 +36,50 @@ class Map:
 		# Add connections
 		for connection_id, connection in self.connections.iterrows():
 			station1_name = self.stations.loc[connection['station1']]['name']
+			station1_coords = {
+				"x" : self.stations.loc[connection['station1']]['latitude'],
+				"y" : self.stations.loc[connection['station1']]['longitude']
+				}
+
 			station2_name = self.stations.loc[connection['station2']]['name']
+			station2_coords = {
+				"x" : self.stations.loc[connection['station2']]['latitude'],
+				"y" : self.stations.loc[connection['station2']]['longitude']
+				}
+			graph.add_node(station1_name, pos=(station1_coords['x'],station1_coords['y']))
+			graph.add_node(station2_name, pos=(station2_coords['x'],station2_coords['y']))
 			graph.add_edge(station1_name, station2_name, time = connection['time'])
-			# Add Bank to Monument manually
-			# TODO: this will be replaced by using the API to check close stations
+		# Add Bank to Monument manually
+		# TODO: this will be replaced by using the API to check close stations
 		graph.add_edge('Bank', 'Monument', time = 1)
 		return graph
 
 	def draw_graph(self):
-		nx.draw(self.graph,node_size=15)
+		pos = nx.get_node_attributes(self.graph,'pos')
+		nx.draw(self.graph, pos, node_size=10, with_labels = False)
 		plt.show()
+
+
+
+	def distance(self, lat1, lat2, lon1, lon2): 
+		# The math module contains a function named
+		# radians which converts from degrees to radians.
+		lon1 = radians(lon1)
+		lon2 = radians(lon2)
+		lat1 = radians(lat1)
+		lat2 = radians(lat2)
+
+		# Haversine formula
+		dlon = lon2 - lon1
+		dlat = lat2 - lat1
+		a = sin(dlat / 2)**2 + cos(lat1) * cos(lat2) * sin(dlon / 2)**2	
+		c = 2 * asin(sqrt(a))
+		
+		# Radius of earth in kilometers. Use 3956 for miles
+		r = 6371
+		
+		# calculate the result
+		return(c * r)
 
 
 def main():
