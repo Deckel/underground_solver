@@ -21,6 +21,7 @@ class Map:
 		lines = pd.read_csv('data/london.lines.csv', index_col=0)
 		stations = pd.read_csv('data/london.stations.csv', index_col=0)
 		connections = pd.read_csv('data/london.connections.csv')
+
 		# Get rid of ugly column
 		stations.drop('display_name', axis=1, inplace=True)
 		# Create nice dictionary
@@ -59,18 +60,6 @@ class Map:
 		nx.draw(self.graph, pos, node_size=10, with_labels = False)
 		plt.show()
 
-	def get_close_stations(self, station, radius):
-		pos = nx.get_node_attributes(self.graph,'pos')
-
-		station_pos = pos[station]
-
-		close_stations = [(station, self.distance(station_pos[1], pos[station][1], station_pos[0], pos[station][0])) 
-			for station in pos if self.distance(station_pos[1], pos[station][1], station_pos[0], pos[station][0]) <= radius
-			]
-
-		return close_stations
-
-
 	def distance(self, lat1, lat2, lon1, lon2): 
 		# The math module contains a function named
 		# radians which converts from degrees to radians.
@@ -91,15 +80,80 @@ class Map:
 		# calculate the result
 		return(c * r)
 
+	def get_close_stations(self, station, radius):
+		# Get all latitude and longitude values
+		pos = nx.get_node_attributes(self.graph,'pos')
+		# Get latitude and longitude for chosen station
+		station_pos = pos[station]
+		# Get a list of all stations where the distance between then is less than the defined radius
+		close_stations = [(station, self.distance(station_pos[1], pos[station][1], station_pos[0], pos[station][0])) 
+			for station in pos if self.distance(station_pos[1], pos[station][1], station_pos[0], pos[station][0]) <= radius
+			]
+		return close_stations
+
+	def get_walking_distance(self, station_1, station_2):
+		return weight
+
+	def get_weight_matrix(self):
+		matrix = []
+		for source in self.graph:
+
+			travel_times = [nx.shortest_path_length(self.graph, source, destination) for destination in self.graph]
+			print(travel_times)
+			matrix = matrix.append(travel_times)
+
+		return matrix
+
+	def remove_bullshit(self):
+		while True:
+			bullshit = [node for node,degree in dict(self.graph.degree()).items() if degree == 2]
+			if not len(bullshit):
+				break
+			bs = bullshit[0]	
+			kill_node(self.graph, bs)
+
+	def remove_connections(self):
+		return
+
+
+def kill_node(graph, node):
+	total_weight = sum([w for name, weight in graph[node].items() 
+						  for k, w in weight.items()])
+	friend1, friend2 = [f for f, d in graph[node].items()]
+	graph.remove_node(node)
+	graph.add_edge(friend1, friend2, time=total_weight)
+
+
+def get_minigraph():
+	underground = Map()
+	underground.remove_bullshit()
+	# underground.draw_graph()
+	# print(underground.graph.nodes)
+	minigraph = underground
+	minigraph.graph = minigraph.graph.subgraph(["Tottenham Court Road", "Leicester Square", "Oxford Circus", "Picadilly Circus"])
+	# minigraph.draw_graph()
+	return minigraph
+
+def get_biggraph():
+	underground = Map()
+	underground.remove_bullshit()
+	return underground
 
 def main():
+	
+	new_edges = pd.read_csv("output.csv")
+	data = new_edges[new_edges['0'] >= 1]
+	new_edges = list(zip(data['Unnamed: 0'], data['Unnamed: 1']))
+
 	underground = Map()
+	underground.remove_bullshit()
+	
+	underground.graph.remove_edges_from(underground.graph.edges())
+	underground.graph.update(edges=new_edges)
 
-	# Example of all stations within a 3 km radius of bank
-	print(underground.get_close_stations("Bank", 3))
+	underground.draw_graph()
 
-	# underground.draw_graph()
-
+	
 
 if __name__ == '__main__':
 	main()
